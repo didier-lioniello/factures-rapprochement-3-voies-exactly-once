@@ -1,0 +1,441 @@
+{
+  "_avertissement": "JEU SYNTHÉTIQUE D'EXEMPLE - aucune donnée réelle, aucun taux de précision réel ne peut en être tiré.",
+  "extracteur": "B (LLM vision, simulé)",
+  "invoices": [
+    {
+      "id": "F01",
+      "source_message_id": "msg-F01",
+      "file_sha256": "f47c886e1e7e1f6cd0fa0c1db2ed5ca56c6174f219b9eb3d83339ebe86c2f76b",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "ATELIER FICTIF MARTIN SAS",
+        "supplier_siret": "11111111100014",
+        "invoice_number": "FA-2026/0042",
+        "invoice_date": "30/09/2026",
+        "po_number": "PO-1001",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "PANNEAU-CTP",
+            "qty": 40,
+            "unit_price_ht": 32.5,
+            "vat_rate": 20.0
+          },
+          {
+            "sku": "VIS-M8",
+            "qty": 500,
+            "unit_price_ht": 0.45,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 1525.0,
+        "total_tva": 305.0,
+        "total_ttc": 1830.0,
+        "iban": "FR48 3000 1000 0100 0000 0001 101"
+      }
+    },
+    {
+      "id": "F02",
+      "source_message_id": "msg-F02",
+      "file_sha256": "ee6415f5fbbe51a00d769f2f9247432113054c9fdb98b8793f984e4037d17d85",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "FOURNITURES EXEMPLE SARL",
+        "supplier_siret": "22222222200010",
+        "invoice_number": "2026-1187",
+        "invoice_date": "01/10/2026",
+        "po_number": "PO-2001",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "PAPIER-A4",
+            "qty": 50,
+            "unit_price_ht": 4.2,
+            "vat_rate": 20.0
+          },
+          {
+            "sku": "CAFE-1KG",
+            "qty": 10,
+            "unit_price_ht": 14.9,
+            "vat_rate": 5.5
+          }
+        ],
+        "total_ht": 359.0,
+        "total_tva": 50.2,
+        "total_ttc": 409.2,
+        "iban": "FR83 3000 1000 0200 0000 0002 202"
+      }
+    },
+    {
+      "id": "F03",
+      "source_message_id": "msg-F03",
+      "file_sha256": "1361644520a44c8229abdd1b3bbdfbfe6f8fd12c0e726f3834b7729ee6d62e33",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "ATELIER FICTIF MARTIN SAS",
+        "supplier_siret": "11111111100014",
+        "invoice_number": "FA 2026 42",
+        "invoice_date": "30/09/2026",
+        "po_number": "PO-1001",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "PANNEAU-CTP",
+            "qty": 40,
+            "unit_price_ht": 32.5,
+            "vat_rate": 20.0
+          },
+          {
+            "sku": "VIS-M8",
+            "qty": 500,
+            "unit_price_ht": 0.45,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 1525.0,
+        "total_tva": 305.0,
+        "total_ttc": 1830.0,
+        "iban": "FR48 3000 1000 0100 0000 0001 101"
+      }
+    },
+    {
+      "id": "F04",
+      "source_message_id": "msg-F02",
+      "file_sha256": "ee6415f5fbbe51a00d769f2f9247432113054c9fdb98b8793f984e4037d17d85",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "FOURNITURES EXEMPLE SARL",
+        "supplier_siret": "22222222200010",
+        "invoice_number": "2026-1187",
+        "invoice_date": "01/10/2026",
+        "po_number": "PO-2001",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "PAPIER-A4",
+            "qty": 50,
+            "unit_price_ht": 4.2,
+            "vat_rate": 20.0
+          },
+          {
+            "sku": "CAFE-1KG",
+            "qty": 10,
+            "unit_price_ht": 14.9,
+            "vat_rate": 5.5
+          }
+        ],
+        "total_ht": 359.0,
+        "total_tva": 50.2,
+        "total_ttc": 409.2,
+        "iban": "FR83 3000 1000 0200 0000 0002 202"
+      }
+    },
+    {
+      "id": "F05",
+      "source_message_id": "msg-F05",
+      "file_sha256": "d135a57808dced205b3844f7390b4ffc6e439afba624cb72ad7dd93a24f20c23",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "LOGISTIQUE DÉMO SA",
+        "supplier_siret": "33333333300016",
+        "invoice_number": "LD-77812",
+        "invoice_date": "02/10/2026",
+        "po_number": "PO-3001",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "TRANSPORT",
+            "qty": 1,
+            "unit_price_ht": 850.0,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 850.0,
+        "total_tva": 170.0,
+        "total_ttc": 1120.0,
+        "iban": "FR21 3000 1000 0300 0000 0003 303"
+      }
+    },
+    {
+      "id": "F06",
+      "source_message_id": "msg-F06",
+      "file_sha256": "34c8c32b92f6c68646dec327c6ef50aa67f8d00f58c64df1e5a0e520cc2c9d04",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "PIÈCES FACTICES SAS",
+        "supplier_siret": "44444444400012",
+        "invoice_number": "PF-2026-0310",
+        "invoice_date": "03/10/2026",
+        "po_number": "PO-4001",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "COURROIE",
+            "qty": 25,
+            "unit_price_ht": 18.4,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 460.0,
+        "total_tva": 92.0,
+        "total_ttc": 552.0,
+        "iban": "FR56 3000 1000 0400 0000 0004 405"
+      }
+    },
+    {
+      "id": "F07",
+      "source_message_id": "msg-F07",
+      "file_sha256": "2586cb5534fe364590ede50cb2ee165217f56723e4bbe87d92fdbc0bc4443520",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "FOURNITURES EXEMPLE SARL",
+        "supplier_siret": "22222222200010",
+        "invoice_number": "2026-1203",
+        "invoice_date": "04/10/2026",
+        "po_number": "PO-2002",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "CLASSEUR",
+            "qty": 100,
+            "unit_price_ht": 2.1,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 210.0,
+        "total_tva": 42.0,
+        "total_ttc": 252.0,
+        "iban": "FR28 3000 4000 9900 0000 0009 909"
+      }
+    },
+    {
+      "id": "F08",
+      "source_message_id": "msg-F08",
+      "file_sha256": "1071e73aa077cb385818382fb580545b077007130a10b75d2f1ba5c0259aa6e8",
+      "fields": {
+        "doc_type": "avoir",
+        "supplier_name": "ATELIER FICTIF MARTIN SAS",
+        "supplier_siret": "11111111100014",
+        "invoice_number": "AV-2026/0007",
+        "invoice_date": "05/10/2026",
+        "po_number": "PO-1001",
+        "related_invoice_number": "FA-2026/0042",
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "PANNEAU-CTP",
+            "qty": -4,
+            "unit_price_ht": 32.5,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": -130.0,
+        "total_tva": -26.0,
+        "total_ttc": -156.0,
+        "iban": "FR48 3000 1000 0100 0000 0001 101"
+      }
+    },
+    {
+      "id": "F09",
+      "source_message_id": "msg-F09",
+      "file_sha256": "a26240c4da667f20d3c2ad7cea7e0ab5f88d7edd57b02dc7fb51ef2cc21f8432",
+      "fields": {
+        "doc_type": "acompte",
+        "supplier_name": "LOGISTIQUE DÉMO SA",
+        "supplier_siret": "33333333300016",
+        "invoice_number": "LD-77901",
+        "invoice_date": "06/10/2026",
+        "po_number": "PO-3002",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "ACOMPTE",
+            "qty": 1,
+            "unit_price_ht": 1500.0,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 1500.0,
+        "total_tva": 300.0,
+        "total_ttc": 1800.0,
+        "iban": "FR21 3000 1000 0300 0000 0003 303"
+      }
+    },
+    {
+      "id": "F10",
+      "source_message_id": "msg-F10",
+      "file_sha256": "fd6991f3e34a6f39c0b50675c4d02483d55dbfb3d2152e1e654f3c458f0644dd",
+      "fields": {
+        "doc_type": "facture_solde",
+        "supplier_name": "LOGISTIQUE DÉMO SA",
+        "supplier_siret": "33333333300016",
+        "invoice_number": "LD-78044",
+        "invoice_date": "12/10/2026",
+        "po_number": "PO-3002",
+        "related_invoice_number": "LD-77901",
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "MACHINE-X",
+            "qty": 1,
+            "unit_price_ht": 5000.0,
+            "vat_rate": 20.0
+          },
+          {
+            "sku": "ACOMPTE-DEDUIT",
+            "qty": 1,
+            "unit_price_ht": -1500.0,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 3500.0,
+        "total_tva": 700.0,
+        "total_ttc": 4200.0,
+        "iban": "FR21 3000 1000 0300 0000 0003 303"
+      }
+    },
+    {
+      "id": "F11",
+      "source_message_id": "msg-F11",
+      "file_sha256": "e26fb6fa7b9fa285b15bfd3a2272d0c5c56b33bb5ae91b23cb412014ec697fa7",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "PIÈCES FACTICES SAS",
+        "supplier_siret": "44444444400012",
+        "invoice_number": "PF-2026-0322",
+        "invoice_date": "07/10/2026",
+        "po_number": "PO-4002",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "ROULEMENT",
+            "qty": 20,
+            "unit_price_ht": 61.5,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 1230.0,
+        "total_tva": 246.0,
+        "total_ttc": 1476.0,
+        "iban": "FR56 3000 1000 0400 0000 0004 404"
+      }
+    },
+    {
+      "id": "F12",
+      "source_message_id": "msg-F12",
+      "file_sha256": "e3df0d3c1eac97d9103bd7ca27c1d02df29d3687a4850044ff975bc2424fbf50",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "ATELIER FICTIF MARTIN SAS",
+        "supplier_siret": "11111111100014",
+        "invoice_number": "FA-2026/0051",
+        "invoice_date": "08/10/2026",
+        "po_number": "PO-1002",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "CHARNIERE",
+            "qty": 60,
+            "unit_price_ht": 3.3,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 228.0,
+        "total_tva": 45.6,
+        "total_ttc": 273.6,
+        "iban": "FR48 3000 1000 0100 0000 0001 101"
+      }
+    },
+    {
+      "id": "F13",
+      "source_message_id": "msg-F13",
+      "file_sha256": "1e360cf771ae4b49f861f2c19b2975b0a4f9c9c2654d74e2594fc122a048c0be",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "FOURNITURES EXEMPLE SARL",
+        "supplier_siret": "22222222200010",
+        "invoice_number": "2026-1219",
+        "invoice_date": "09/10/2026",
+        "po_number": "PO-2003",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "CARTOUCHE-TONER",
+            "qty": 12,
+            "unit_price_ht": 45.0,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 540.0,
+        "total_tva": 108.0,
+        "total_ttc": 648.0,
+        "iban": "FR83 3000 1000 0200 0000 0002 202"
+      }
+    },
+    {
+      "id": "F14",
+      "source_message_id": "msg-F14",
+      "file_sha256": "51ef4566c3e086bca7910914a64e566989d0b87d751ebc4e385d88f9de2b01ec",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "PIÈCES FACTICES SAS",
+        "supplier_siret": "44444444400012",
+        "invoice_number": "PF-2026-0330",
+        "invoice_date": "10/10/2026",
+        "po_number": "PO-4003",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "FILTRE-HUILE",
+            "qty": 30,
+            "unit_price_ht": 7.83,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 234.9,
+        "total_tva": 46.98,
+        "total_ttc": 281.88,
+        "iban": "FR56 3000 1000 0400 0000 0004 404"
+      }
+    },
+    {
+      "id": "F15",
+      "source_message_id": "msg-F15",
+      "file_sha256": "d336ee1af19f39dcd7cb68e473ecb98a1f9c5dd5f57c911be749a3251950d023",
+      "fields": {
+        "doc_type": "facture",
+        "supplier_name": "ATELIER FICTIF MARTIN SAS",
+        "supplier_siret": "11111111100015",
+        "invoice_number": "FA-2026/0060",
+        "invoice_date": "11/10/2026",
+        "po_number": "PO-1003",
+        "related_invoice_number": null,
+        "currency": "EUR",
+        "lines": [
+          {
+            "sku": "GANTS",
+            "qty": 100,
+            "unit_price_ht": 1.2,
+            "vat_rate": 20.0
+          }
+        ],
+        "total_ht": 120.0,
+        "total_tva": 24.0,
+        "total_ttc": 144.0,
+        "iban": "FR48 3000 1000 0100 0000 0001 101"
+      }
+    }
+  ]
+}
