@@ -1,0 +1,201 @@
+{
+  "_avertissement": "Données entièrement fictives, générées pour l'exemple.",
+  "suppliers": {
+    "111111111": {
+      "name": "Atelier Fictif Martin SAS",
+      "known_ibans": [
+        "FR4830001000010000000001101"
+      ]
+    },
+    "222222222": {
+      "name": "Fournitures Exemple SARL",
+      "known_ibans": [
+        "FR8330001000020000000002202"
+      ]
+    },
+    "333333333": {
+      "name": "Logistique Démo SA",
+      "known_ibans": [
+        "FR2130001000030000000003303"
+      ]
+    },
+    "444444444": {
+      "name": "Pièces Factices SAS",
+      "known_ibans": [
+        "FR5630001000040000000004404"
+      ]
+    }
+  },
+  "purchase_orders": {
+    "PO-1001": {
+      "supplier_siren": "111111111",
+      "lines": [
+        {
+          "sku": "PANNEAU-CTP",
+          "qty": 40,
+          "unit_price_ht": 32.5,
+          "vat_rate": 20.0
+        },
+        {
+          "sku": "VIS-M8",
+          "qty": 500,
+          "unit_price_ht": 0.45,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-1002": {
+      "supplier_siren": "111111111",
+      "lines": [
+        {
+          "sku": "CHARNIERE",
+          "qty": 60,
+          "unit_price_ht": 3.8,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-1003": {
+      "supplier_siren": "111111111",
+      "lines": [
+        {
+          "sku": "GANTS",
+          "qty": 100,
+          "unit_price_ht": 1.2,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-2001": {
+      "supplier_siren": "222222222",
+      "lines": [
+        {
+          "sku": "PAPIER-A4",
+          "qty": 50,
+          "unit_price_ht": 4.2,
+          "vat_rate": 20.0
+        },
+        {
+          "sku": "CAFE-1KG",
+          "qty": 10,
+          "unit_price_ht": 14.9,
+          "vat_rate": 5.5
+        }
+      ]
+    },
+    "PO-2002": {
+      "supplier_siren": "222222222",
+      "lines": [
+        {
+          "sku": "CLASSEUR",
+          "qty": 100,
+          "unit_price_ht": 2.1,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-2003": {
+      "supplier_siren": "222222222",
+      "lines": [
+        {
+          "sku": "CARTOUCHE-TONER",
+          "qty": 12,
+          "unit_price_ht": 45.0,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-3001": {
+      "supplier_siren": "333333333",
+      "lines": [
+        {
+          "sku": "TRANSPORT",
+          "qty": 1,
+          "unit_price_ht": 850.0,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-3002": {
+      "supplier_siren": "333333333",
+      "lines": [
+        {
+          "sku": "MACHINE-X",
+          "qty": 1,
+          "unit_price_ht": 5000.0,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-4001": {
+      "supplier_siren": "444444444",
+      "lines": [
+        {
+          "sku": "COURROIE",
+          "qty": 25,
+          "unit_price_ht": 18.4,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-4002": {
+      "supplier_siren": "444444444",
+      "lines": [
+        {
+          "sku": "ROULEMENT",
+          "qty": 20,
+          "unit_price_ht": 61.5,
+          "vat_rate": 20.0
+        }
+      ]
+    },
+    "PO-4003": {
+      "supplier_siren": "444444444",
+      "lines": [
+        {
+          "sku": "FILTRE-HUILE",
+          "qty": 30,
+          "unit_price_ht": 7.8,
+          "vat_rate": 20.0
+        }
+      ]
+    }
+  },
+  "goods_receipts": {
+    "PO-1001": {
+      "PANNEAU-CTP": 40,
+      "VIS-M8": 500
+    },
+    "PO-1002": {
+      "CHARNIERE": 60
+    },
+    "PO-1003": {
+      "GANTS": 100
+    },
+    "PO-2001": {
+      "PAPIER-A4": 50,
+      "CAFE-1KG": 10
+    },
+    "PO-2002": {
+      "CLASSEUR": 100
+    },
+    "PO-2003": {
+      "CARTOUCHE-TONER": 8
+    },
+    "PO-3001": {
+      "TRANSPORT": 1
+    },
+    "PO-3002": {
+      "MACHINE-X": 1
+    },
+    "PO-4001": {
+      "COURROIE": 25
+    },
+    "PO-4002": {
+      "ROULEMENT": 20
+    },
+    "PO-4003": {
+      "FILTRE-HUILE": 30
+    }
+  }
+}
