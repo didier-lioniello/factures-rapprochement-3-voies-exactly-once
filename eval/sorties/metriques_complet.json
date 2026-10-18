@@ -1,0 +1,74 @@
+{
+  "sortie": "sorties/sortie_complet.json",
+  "mode": "complet",
+  "synthetique": true,
+  "factures": 15,
+  "exactitude_par_champ": {
+    "doc_type": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "supplier_siret": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "invoice_number": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "invoice_date": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "po_number": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "related_invoice_number": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "total_ht": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "total_tva": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "total_ttc": {
+      "exact": 13,
+      "faux": 0,
+      "non_resolu": 1
+    },
+    "iban": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "lines": {
+      "exact": 13,
+      "faux": 1,
+      "non_resolu": 0
+    }
+  },
+  "decisions": {
+    "auto": 6,
+    "revue": 7,
+    "doublon": 2
+  },
+  "taux_revue": 0.4667,
+  "revues_evitables": [
+    "F11",
+    "F12"
+  ],
+  "erreurs_silencieuses": []
+}

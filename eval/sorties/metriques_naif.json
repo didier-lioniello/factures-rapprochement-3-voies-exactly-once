@@ -1,0 +1,104 @@
+{
+  "sortie": "sorties/sortie_naif.json",
+  "mode": "naif",
+  "synthetique": true,
+  "factures": 15,
+  "exactitude_par_champ": {
+    "doc_type": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "supplier_siret": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "invoice_number": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "invoice_date": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "po_number": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "related_invoice_number": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "total_ht": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "total_tva": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "total_ttc": {
+      "exact": 13,
+      "faux": 1,
+      "non_resolu": 0
+    },
+    "iban": {
+      "exact": 14,
+      "faux": 0,
+      "non_resolu": 0
+    },
+    "lines": {
+      "exact": 13,
+      "faux": 1,
+      "non_resolu": 0
+    }
+  },
+  "decisions": {
+    "auto": 14,
+    "revue": 0,
+    "doublon": 1
+  },
+  "taux_revue": 0.0,
+  "revues_evitables": [],
+  "erreurs_silencieuses": [
+    {
+      "id": "F03",
+      "raison": "double écriture d'un doublon"
+    },
+    {
+      "id": "F05",
+      "raison": "anomalie non détectée, écrite automatiquement"
+    },
+    {
+      "id": "F06",
+      "raison": "anomalie non détectée, écrite automatiquement"
+    },
+    {
+      "id": "F07",
+      "raison": "anomalie non détectée, écrite automatiquement"
+    },
+    {
+      "id": "F11",
+      "raison": "écrite avec des valeurs fausses : total_ttc"
+    },
+    {
+      "id": "F12",
+      "raison": "écrite avec des valeurs fausses : lines"
+    },
+    {
+      "id": "F13",
+      "raison": "anomalie non détectée, écrite automatiquement"
+    },
+    {
+      "id": "F15",
+      "raison": "anomalie non détectée, écrite automatiquement"
+    }
+  ]
+}
