@@ -1,0 +1,1642 @@
+{
+  "name": "Factures fournisseurs → compta : rapprochement 3 voies, écriture exactement une fois (exemple)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "has:attachment filename:pdf label:factures-fournisseurs"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "id": "a73b63fa-cbd3-5060-8fb4-67ca2afefe44",
+      "name": "Gmail : factures entrantes",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CRED_FACTICE_01",
+          "name": "Gmail factures (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "factures-entrantes-factice",
+        "responseMode": "onReceived",
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "326abbbc-6f26-51e7-abcb-912f8c27ceda",
+      "name": "Webhook : portail fournisseur",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ],
+      "webhookId": "ee77c0e0-4bb6-5f2b-b4ac-aed297c8b7f3"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Mode : Run Once for Each Item\n// Unifie Gmail et le webhook : un item = un PDF, avec un identifiant de message stable.\nconst j = $json;\nconst binKey = Object.keys($binary || {}).find(k => ($binary[k].mimeType || '').includes('pdf'));\nif (!binKey) throw new Error('Aucun PDF dans le message');\nconst sourceId = j.id                                   // Gmail : id du message\n  || j.headers?.['idempotency-key']                     // portail fournisseur\n  || j.body?.message_id;\nif (!sourceId) throw new Error('Pas d\\'identifiant de message : refus (pas d\\'idempotence possible)');\nreturn { json: { source_message_id: String(sourceId), binary_key: binKey },\n         binary: { pdf: $binary[binKey] } };\n"
+      },
+      "id": "6181a7f9-96d4-5838-91ac-79781066d390",
+      "name": "Normaliser l'entrée",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": true,
+        "binaryPropertyName": "pdf",
+        "dataPropertyName": "file_sha256"
+      },
+      "id": "8e91fe55-0d94-5c9a-9ca6-2281f0524aeb",
+      "name": "Hash SHA-256 du PDF",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ap.invoices (source_message_id, file_sha256)\nVALUES ($1, $2)\nON CONFLICT (source_message_id, file_sha256) DO NOTHING\nRETURNING id AS invoice_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.source_message_id, $json.file_sha256] }}"
+        }
+      },
+      "id": "36584fbb-0d59-5687-a77c-8ef241558571",
+      "name": "Enregistrer la réception (recu)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "75811f76-8766-521f-87a8-bf7c502d6327",
+              "leftValue": "={{ $json.invoice_id }}",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a8d71b7b-2620-5003-8c12-356f7b6fc2a7",
+      "name": "Nouvelle réception ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "fda62e64-75c3-5832-b16a-e2fca45230f3",
+      "name": "Relance ignorée (idempotent)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Mode : Run Once for Each Item\n// Le nœud Postgres ne transmet pas le binaire : on réattache le PDF depuis le nœud de hash.\nreturn { json: { invoice_id: $json.invoice_id },\n         binary: $('Hash SHA-256 du PDF').item.binary };\n"
+      },
+      "id": "82617391-a366-5874-b18a-e2c50b1d6982",
+      "name": "Réattacher le PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ocr.example.invalid/v1/invoices:analyze",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 120000
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "pdf"
+      },
+      "id": "4ca32761-100c-5103-8a52-ef603f8815e6",
+      "name": "Extracteur A : OCR factures",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HTTP_CRED_FACTICE_02",
+          "name": "Service OCR (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://llm.example.invalid/v1/extract",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 120000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Schema",
+              "value": "invoice-fr-v3"
+            },
+            {
+              "name": "X-Temperature",
+              "value": "0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "pdf"
+      },
+      "id": "e6c32210-319e-5f72-b8bb-c515361c4680",
+      "name": "Extracteur B : LLM vision (JSON strict)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HTTP_CRED_FACTICE_03",
+          "name": "API LLM vision (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c797c4e1-374a-5428-bef1-323a54779c5a",
+              "name": "invoice_id",
+              "value": "={{ $('Réattacher le PDF').item.json.invoice_id }}",
+              "type": "number"
+            },
+            {
+              "id": "5996634b-1a30-5bc8-a38a-b201c27a7e2e",
+              "name": "extraction_a",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "5899af3e-7dc2-573c-87d2-23a9317d8c06",
+      "name": "Étiqueter A",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e7a6b754-2cd1-5b15-b5c4-045b88b89b0a",
+              "name": "extraction_b",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "afe43de1-fdfd-579b-889a-99ae2299d4d9",
+      "name": "Étiqueter B",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "4cb15275-0bf8-5ffa-9e84-0bff7f4dc5e9",
+      "name": "Réunir A et B",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1780,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Mode : Run Once for Each Item\n// Vote champ par champ entre l'extracteur A (OCR) et l'extracteur B (LLM vision).\n// Une valeur n'est retenue que si les deux concordent après normalisation ; sinon null + revue.\nconst CRITICAL = ['doc_type','supplier_siret','invoice_number','invoice_date','po_number',\n                  'related_invoice_number','total_ht','total_tva','total_ttc','iban','lines'];\nconst money = x => x == null ? null : Math.round(Number(String(x).replace(/\\s/g,'').replace(',', '.')) * 100);\nconst normNum = n => n == null ? null : n.toUpperCase().replace(/(^|[^0-9])0+([0-9])/g, '$1$2').replace(/[^A-Z0-9]/g, '');\nconst normDate = s => { if (!s) return null; const m = s.match(/^(\\d{2})[\\/.](\\d{2})[\\/.](\\d{4})$/);\n                        return m ? `${m[3]}-${m[2]}-${m[1]}` : s; };\nconst normIban = s => s == null ? null : s.replace(/\\s/g, '').toUpperCase();\nconst normLines = ls => ls == null ? null : JSON.stringify(ls.map(l =>\n  [l.sku, Number(l.qty), money(l.unit_price_ht), Number(l.vat_rate)]));\nconst norm = (k, v) => {\n  if (v == null) return null;\n  if (k.startsWith('total_')) return money(v);\n  if (k.endsWith('invoice_number')) return normNum(v);\n  if (k === 'invoice_date') return normDate(v);\n  if (k === 'iban') return normIban(v);\n  if (k === 'lines') return normLines(v);\n  return v;\n};\nconst a = $json.extraction_a || {}, b = $json.extraction_b || {};\nconst voted = { supplier_name: a.supplier_name ?? b.supplier_name }, disagreements = [];\nfor (const k of CRITICAL) {\n  const va = norm(k, a[k]), vb = norm(k, b[k]);\n  if (va === vb) voted[k] = (k === 'invoice_date') ? va : (k === 'iban' ? va : a[k]);\n  else { voted[k] = null; disagreements.push(k); }\n}\nreturn { json: { invoice_id: $json.invoice_id, extraction_a: a, extraction_b: b, voted, disagreements } };\n"
+      },
+      "id": "35b07800-f328-5a76-af3c-0cf418293ac2",
+      "name": "Vote champ par champ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_save_extraction($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::text[]) AS state, $1::bigint AS invoice_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.invoice_id, JSON.stringify($json.extraction_a), JSON.stringify($json.extraction_b), JSON.stringify($json.voted), '{' + $json.disagreements.join(',') + '}'] }}"
+        }
+      },
+      "id": "80999418-3bc7-5e4f-ab7f-bacd717eaa7c",
+      "name": "Enregistrer extraction + vote",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2220,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "d8f790f8-8d39-531d-9058-cbb322f3a688",
+              "leftValue": "={{ $json.state }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "extrait"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a463b9b8-4f75-5a2d-a2e3-3c7f6b8419d5",
+      "name": "Extracteurs d'accord ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_load_for_checks($1) AS ctx;",
+        "options": {
+          "queryReplacement": "={{ [$json.invoice_id] }}"
+        }
+      },
+      "id": "4e0285c0-5e7b-5a35-b119-0e923c1f9a1a",
+      "name": "Charger BC, réceptions, IBAN connus",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2660,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Mode : Run Once for Each Item\n// Contrôles déterministes + rapprochement 3 voies (facture / BC / réception) + score de confiance.\n// Entrée : le JSON renvoyé par ap.fn_load_for_checks(invoice_id).\nconst ctx = $json.ctx, f = ctx.fields;\nconst PRICE_TOL = 0.01, ACOMPTE_MAX = 0.40, AUTO_THRESHOLD = 0.90;\nconst c = x => Math.round(Number(x) * 100);                    // centimes entiers, jamais de float\nconst reasons = [], penalties = [];\n\nfunction ibanValid(s) {\n  s = (s || '').replace(/\\s/g, '').toUpperCase();\n  if (!/^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$/.test(s)) return false;\n  const r = (s.slice(4) + s.slice(0, 4)).replace(/[A-Z]/g, ch => String(ch.charCodeAt(0) - 55));\n  let rem = 0; for (const d of r) rem = (rem * 10 + Number(d)) % 97;\n  return rem === 1;\n}\nfunction siretValid(s) {\n  if (!/^\\d{14}$/.test(s || '')) return false;\n  if (s.startsWith('356000000')) return [...s].reduce((t, d) => t + +d, 0) % 5 === 0; // La Poste\n  let t = 0;\n  [...s].reverse().forEach((ch, i) => { let d = +ch; if (i % 2) { d *= 2; if (d > 9) d -= 9; } t += d; });\n  return t % 10 === 0;\n}\n\nconst lines = f.lines || [];\nconst lineHt = l => Math.round(Number(l.qty) * c(l.unit_price_ht));\nif (lines.reduce((t, l) => t + lineHt(l), 0) !== c(f.total_ht)) reasons.push('somme des lignes ≠ total HT');\nconst byRate = {}; lines.forEach(l => byRate[l.vat_rate] = (byRate[l.vat_rate] || 0) + lineHt(l));\nconst tvaCalc = Object.entries(byRate).reduce((t, [r, b]) => t + Math.round(b * Number(r) / 100), 0);\nif (Math.abs(tvaCalc - c(f.total_tva)) > Object.keys(byRate).length) reasons.push('TVA recalculée ≠ TVA imprimée');\nif (c(f.total_ht) + c(f.total_tva) !== c(f.total_ttc)) reasons.push('HT + TVA ≠ TTC');\nif (!siretValid(f.supplier_siret)) reasons.push('SIRET invalide (Luhn)');\nif (!ibanValid(f.iban)) reasons.push('IBAN invalide (mod 97)');\nelse if (!ctx.known_ibans.includes(f.iban)) reasons.push(\"IBAN différent de l'IBAN connu du fournisseur\");\nif ((f.doc_type === 'avoir') !== (c(f.total_ttc) < 0)) reasons.push('signe incohérent avec le type de document');\n\nconst po = ctx.po;\nif (!po) reasons.push('bon de commande introuvable');\nelse {\n  if (po.supplier_siren !== (f.supplier_siret || '').slice(0, 9)) reasons.push(\"BC d'un autre fournisseur\");\n  const poLines = Object.fromEntries(po.lines.map(l => [l.sku, l]));\n  const poHt = po.lines.reduce((t, l) => t + Math.round(Number(l.qty) * c(l.unit_price_ht)), 0);\n  if (f.doc_type === 'acompte') {\n    penalties.push(['acompte', 0.03]);\n    if (c(f.total_ht) > poHt * ACOMPTE_MAX) reasons.push('acompte supérieur au plafond');\n  } else {\n    if (f.doc_type === 'avoir') {\n      penalties.push(['avoir', 0.03]);\n      if (ctx.original_ttc == null) reasons.push(\"avoir sans facture d'origine engagée\");\n      else if (-c(f.total_ttc) > c(ctx.original_ttc)) reasons.push(\"avoir supérieur à la facture d'origine\");\n    }\n    if (f.doc_type === 'facture_solde') {\n      penalties.push(['facture de solde', 0.03]);\n      const deducted = -lines.filter(l => l.sku === 'ACOMPTE-DEDUIT').reduce((t, l) => t + lineHt(l), 0);\n      if (deducted !== c(ctx.acomptes_ht)) reasons.push('acompte déduit ≠ acomptes déjà engagés');\n    }\n    for (const l of lines) {\n      if (l.sku === 'ACOMPTE-DEDUIT') continue;\n      const pl = poLines[l.sku];\n      if (!pl) { reasons.push(`${l.sku} absent du BC`); continue; }\n      const gap = Math.abs(c(l.unit_price_ht) - c(pl.unit_price_ht)) / c(pl.unit_price_ht);\n      if (gap > PRICE_TOL) reasons.push(`${l.sku} : prix hors tolérance (${(gap * 100).toFixed(2)} %)`);\n      else if (gap > 0) penalties.push([`${l.sku} : écart de prix toléré`, 0.05]);\n      if (Number(l.vat_rate) !== Number(pl.vat_rate)) reasons.push(`${l.sku} : taux de TVA ≠ BC`);\n      if (f.doc_type !== 'avoir') {\n        const already = Number(ctx.already_invoiced[l.sku] || 0), rec = Number(ctx.received[l.sku] || 0);\n        if (already + Number(l.qty) > rec) reasons.push(`${l.sku} : quantité facturée > quantité reçue`);\n      }\n    }\n  }\n}\nconst confidence = reasons.length ? 0 : Math.max(0, 1 - penalties.reduce((t, [, p]) => t + p, 0));\nconst pass = reasons.length === 0 && confidence >= AUTO_THRESHOLD;\nreturn { json: { invoice_id: ctx.invoice_id, pass, confidence,\n  checks: { reasons, penalties, summary: reasons.join(' ; ') || 'contrôles OK' },\n  // écriture comptable préparée maintenant, envoyée plus tard par le worker outbox\n  entry: { journal: 'HA', date: f.invoice_date, piece: f.invoice_number, supplier_siret: f.supplier_siret,\n           doc_type: f.doc_type, total_ht: f.total_ht, total_tva: f.total_tva, total_ttc: f.total_ttc } } };\n"
+      },
+      "id": "838bacc6-b9ef-521b-a74c-0a8482dcd263",
+      "name": "Contrôles déterministes + 3 voies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_save_checks($1, $2::jsonb, $3, $4) AS state, $1::bigint AS invoice_id, $5::jsonb AS entry;",
+        "options": {
+          "queryReplacement": "={{ [$json.invoice_id, JSON.stringify($json.checks), $json.confidence, $json.pass, JSON.stringify($json.entry)] }}"
+        }
+      },
+      "id": "012b8d40-d4c1-56d3-9aec-722e58044b7c",
+      "name": "Enregistrer contrôles (valide / en_revue)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3100,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "d2f66e4a-e79f-5d3f-bfdb-bef41a70a142",
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "valide",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "valide"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "741d4c6c-3bb1-5364-bd49-eeda945639d9",
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "en_revue",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "en_revue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2e117ba7-e8cc-56cf-a8b5-c21763866fc0",
+      "name": "Routage par état",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        3320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_reserve($1, $2::jsonb) AS result, $1::bigint AS invoice_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.invoice_id, JSON.stringify($json.entry)] }}"
+        }
+      },
+      "id": "e670f2e5-0231-5a35-8995-d493df212c26",
+      "name": "Réserver empreinte + créer outbox",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3540,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "10be4867-86aa-5ff7-a6b6-1a89bbd74c90",
+                    "leftValue": "={{ $json.result }}",
+                    "rightValue": "reserve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reserve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "3d122367-624d-5b40-932b-ebcdbaa3012d",
+                    "leftValue": "={{ $json.result }}",
+                    "rightValue": "doublon",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "doublon"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f6da54c7-d584-5f55-ac8d-f24b75a7b02b",
+      "name": "Réservé ou doublon ?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        3760,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "8941a85a-a4c3-52d0-875a-475f98d7948d",
+      "name": "En file pour le worker outbox",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3980,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0FACTICE00",
+          "mode": "id"
+        },
+        "text": "=Doublon bloqué avant écriture : facture {{ $json.invoice_id }} (empreinte déjà réservée).",
+        "otherOptions": {}
+      },
+      "id": "c5710219-81e9-5628-b318-8439d94d5030",
+      "name": "Slack : doublon bloqué",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        3980,
+        100
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CRED_FACTICE_01",
+          "name": "Slack (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0FACTICE00",
+          "mode": "id"
+        },
+        "text": "=Facture {{ $json.invoice_id }} à revoir. Formulaire : https://n8n.example.invalid/form/revue-facture",
+        "otherOptions": {}
+      },
+      "id": "d84c5665-c7db-5117-963c-18c665a66059",
+      "name": "Slack : facture à revoir",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        3540,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CRED_FACTICE_01",
+          "name": "Slack (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Revue d'une facture fournisseur",
+        "formDescription": "Valider (avec corrections éventuelles) ou rejeter. Une validation repasse par les contrôles : elle ne les force jamais.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "invoice_id",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "reviewer",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "decision",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "valider"
+                  },
+                  {
+                    "option": "rejeter"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "corrections_json",
+              "fieldType": "textarea",
+              "placeholder": "{\"total_ttc\": 1476.00}"
+            },
+            {
+              "fieldLabel": "commentaire",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8b5aa1b4-317b-5d43-8404-cbde1a87ea3f",
+      "name": "Formulaire : décision du réviseur",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        2220,
+        560
+      ],
+      "webhookId": "b8e1d384-d77d-5737-8253-37f86b16aff7"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_apply_review($1, $2, $3, $4::jsonb, $5) AS state, $1::bigint AS invoice_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.invoice_id, $json.reviewer, $json.decision, $json.corrections_json || '{}', $json.commentaire || null] }}"
+        }
+      },
+      "id": "9d3d4d37-85f5-5c49-8d8a-c423c18fdabe",
+      "name": "Appliquer la décision (audit)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2440,
+        560
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c0faaeec-9b57-58ce-bf6a-01e12bd4b7fa",
+              "leftValue": "={{ $json.state }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "extrait"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bc1a0846-bec9-567e-b3a8-0318509082a3",
+      "name": "Validée → repasser les contrôles ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "106eeb77-f91a-588d-8b67-40a9ca10fdc5",
+      "name": "Toutes les minutes : worker outbox",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM ap.fn_claim_outbox(10, interval '2 minutes');",
+        "options": {}
+      },
+      "id": "7ef75fbb-9f1f-5fdb-984a-b74776476ace",
+      "name": "Prendre un lot (SKIP LOCKED) → ecrit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://compta.example.invalid/api/v1/entries",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.fingerprint }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ...$json.payload, external_reference: $json.fingerprint }) }}"
+      },
+      "id": "1bfc71a5-23e7-5e16-bde1-545a20cf0ee5",
+      "name": "API compta : créer l'écriture",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        900
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HTTP_CRED_FACTICE_01",
+          "name": "API compta (factice)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://compta.example.invalid/api/v1/entries/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "95eb160f-8e68-5664-97f8-7b9365c30a80",
+      "name": "Relire l'écriture (preuve)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        820
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HTTP_CRED_FACTICE_01",
+          "name": "API compta (factice)"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_confirm($1, $2);",
+        "options": {
+          "queryReplacement": "={{ [$('Prendre un lot (SKIP LOCKED) → ecrit').item.json.invoice_id, $json.id] }}"
+        }
+      },
+      "id": "8b5940cb-f2a6-5bc0-a561-b4601ffeb146",
+      "name": "Confirmer (confirme)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        900,
+        760
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_mark_uncertain($1, $2);",
+        "options": {
+          "queryReplacement": "={{ [$('Prendre un lot (SKIP LOCKED) → ecrit').item.json.invoice_id, $json.error?.message || 'erreur API'] }}"
+        }
+      },
+      "id": "0e1ad4a7-11ad-5e3b-bdbf-257fb14ccaea",
+      "name": "Marquer incertain (pas de renvoi)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        900,
+        1000
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "654b9d1b-9498-59f1-8882-ab5cd26feab2",
+      "name": "Toutes les 15 min : réconciliation",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM ap.v_reconcile_candidates;",
+        "options": {}
+      },
+      "id": "6d248fc7-c605-532f-b980-ee323a6d4584",
+      "name": "Candidats à réconcilier",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        1300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://compta.example.invalid/api/v1/entries?external_reference={{ $json.fingerprint }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "395e1316-ffbd-50b3-8322-587e782adc15",
+      "name": "Chercher dans la compta par empreinte",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        1300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HTTP_CRED_FACTICE_01",
+          "name": "API compta (factice)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Mode : Run Once for Each Item\n// La compta a été interrogée par référence externe = empreinte. Verdict sans ambiguïté :\n// trouvée => on confirme (surtout ne pas renvoyer) ; absente => renvoi sûr.\nconst hits = ($json.entries || $json.data || []).filter(e => e.external_reference === $('Candidats à réconcilier').item.json.fingerprint);\nif (hits.length > 1) throw new Error('Plusieurs écritures pour une même empreinte : alerte humaine');\nreturn { json: { invoice_id: $('Candidats à réconcilier').item.json.invoice_id,\n                 found: hits.length === 1, external_ref: hits[0]?.id ?? null } };\n"
+      },
+      "id": "3c6bf0c5-70f6-5fb4-ba00-f07c7dde9b09",
+      "name": "Verdict : trouvée / absente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ap.fn_reconcile($1, $2, $3) AS state;",
+        "options": {
+          "queryReplacement": "={{ [$json.invoice_id, $json.found, $json.external_ref] }}"
+        }
+      },
+      "id": "d267468f-f61a-5c11-8982-10aad55171b1",
+      "name": "Appliquer le verdict",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        900,
+        1300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM ap.v_stuck;",
+        "options": {}
+      },
+      "id": "dd2cbf63-8124-50a6-9ad8-108585117d85",
+      "name": "Supervision : états bloqués",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1120,
+        1300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PG_CRED_FACTICE_01",
+          "name": "Postgres AP (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "9a7ee6b5-0fa4-54d9-acaa-6f6513ab16df",
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7988ebc4-e13d-5be2-b1c0-7c9d92dd2056",
+      "name": "Factures bloquées ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0FACTICE00",
+          "mode": "id"
+        },
+        "text": "=Facture {{ $json.id }} bloquée à l'état {{ $json.state }} depuis {{ $json.age }}.",
+        "otherOptions": {}
+      },
+      "id": "827440b3-67e5-5b72-95dd-413a5d9b63f8",
+      "name": "Slack : états bloqués",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1560,
+        1300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CRED_FACTICE_01",
+          "name": "Slack (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "a5666589-e12d-567e-9016-bb8979bb5cb4",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0FACTICE00",
+          "mode": "id"
+        },
+        "text": "=Échec du workflow factures : {{ $json.execution.error.message }} (nœud {{ $json.execution.lastNodeExecuted }})",
+        "otherOptions": {}
+      },
+      "id": "ac66c213-b501-5503-8b4f-a086a8c60f17",
+      "name": "Slack : erreur d'exécution",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        1600
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CRED_FACTICE_01",
+          "name": "Slack (factice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Idempotence\nn8n ne garantit pas « exactement une fois ». UNIQUE(source_message_id, file_sha256) absorbe les relances ; l'empreinte métier UNIQUE est réservée dans Postgres AVANT tout appel à la compta.",
+        "width": 420,
+        "height": 160
+      },
+      "id": "3a2220bb-0f79-5e59-85f7-82a3049f7388",
+      "name": "Note : idempotence",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Outbox\nAucun nœud d'ingestion n'appelle la compta. Seul le worker le fait, avec Idempotency-Key = empreinte. Timeout => incertain, jamais de renvoi aveugle.",
+        "width": 420,
+        "height": 160
+      },
+      "id": "1d201889-d476-5019-90a6-e54ac00c5285",
+      "name": "Note : outbox",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Aucun paiement\nCe workflow passe des écritures comptables. Il ne déclenche jamais de virement.",
+        "width": 420,
+        "height": 120
+      },
+      "id": "e3a9e996-d08f-5369-b35f-28db0889a544",
+      "name": "Note : aucun paiement",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        560
+      ]
+    }
+  ],
+  "connections": {
+    "Gmail : factures entrantes": {
+      "main": [
+        [
+          {
+            "node": "Normaliser l'entrée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook : portail fournisseur": {
+      "main": [
+        [
+          {
+            "node": "Normaliser l'entrée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliser l'entrée": {
+      "main": [
+        [
+          {
+            "node": "Hash SHA-256 du PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash SHA-256 du PDF": {
+      "main": [
+        [
+          {
+            "node": "Enregistrer la réception (recu)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enregistrer la réception (recu)": {
+      "main": [
+        [
+          {
+            "node": "Nouvelle réception ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nouvelle réception ?": {
+      "main": [
+        [
+          {
+            "node": "Réattacher le PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Relance ignorée (idempotent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Réattacher le PDF": {
+      "main": [
+        [
+          {
+            "node": "Extracteur A : OCR factures",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extracteur B : LLM vision (JSON strict)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracteur A : OCR factures": {
+      "main": [
+        [
+          {
+            "node": "Étiqueter A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracteur B : LLM vision (JSON strict)": {
+      "main": [
+        [
+          {
+            "node": "Étiqueter B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Étiqueter A": {
+      "main": [
+        [
+          {
+            "node": "Réunir A et B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Étiqueter B": {
+      "main": [
+        [
+          {
+            "node": "Réunir A et B",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Réunir A et B": {
+      "main": [
+        [
+          {
+            "node": "Vote champ par champ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vote champ par champ": {
+      "main": [
+        [
+          {
+            "node": "Enregistrer extraction + vote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enregistrer extraction + vote": {
+      "main": [
+        [
+          {
+            "node": "Extracteurs d'accord ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracteurs d'accord ?": {
+      "main": [
+        [
+          {
+            "node": "Charger BC, réceptions, IBAN connus",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack : facture à revoir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charger BC, réceptions, IBAN connus": {
+      "main": [
+        [
+          {
+            "node": "Contrôles déterministes + 3 voies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contrôles déterministes + 3 voies": {
+      "main": [
+        [
+          {
+            "node": "Enregistrer contrôles (valide / en_revue)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enregistrer contrôles (valide / en_revue)": {
+      "main": [
+        [
+          {
+            "node": "Routage par état",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routage par état": {
+      "main": [
+        [
+          {
+            "node": "Réserver empreinte + créer outbox",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack : facture à revoir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Réserver empreinte + créer outbox": {
+      "main": [
+        [
+          {
+            "node": "Réservé ou doublon ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Réservé ou doublon ?": {
+      "main": [
+        [
+          {
+            "node": "En file pour le worker outbox",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack : doublon bloqué",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formulaire : décision du réviseur": {
+      "main": [
+        [
+          {
+            "node": "Appliquer la décision (audit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appliquer la décision (audit)": {
+      "main": [
+        [
+          {
+            "node": "Validée → repasser les contrôles ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validée → repasser les contrôles ?": {
+      "main": [
+        [
+          {
+            "node": "Charger BC, réceptions, IBAN connus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Toutes les minutes : worker outbox": {
+      "main": [
+        [
+          {
+            "node": "Prendre un lot (SKIP LOCKED) → ecrit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prendre un lot (SKIP LOCKED) → ecrit": {
+      "main": [
+        [
+          {
+            "node": "API compta : créer l'écriture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API compta : créer l'écriture": {
+      "main": [
+        [
+          {
+            "node": "Relire l'écriture (preuve)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marquer incertain (pas de renvoi)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Relire l'écriture (preuve)": {
+      "main": [
+        [
+          {
+            "node": "Confirmer (confirme)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marquer incertain (pas de renvoi)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Toutes les 15 min : réconciliation": {
+      "main": [
+        [
+          {
+            "node": "Candidats à réconcilier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Candidats à réconcilier": {
+      "main": [
+        [
+          {
+            "node": "Chercher dans la compta par empreinte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chercher dans la compta par empreinte": {
+      "main": [
+        [
+          {
+            "node": "Verdict : trouvée / absente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict : trouvée / absente": {
+      "main": [
+        [
+          {
+            "node": "Appliquer le verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appliquer le verdict": {
+      "main": [
+        [
+          {
+            "node": "Supervision : états bloqués",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supervision : états bloqués": {
+      "main": [
+        [
+          {
+            "node": "Factures bloquées ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Factures bloquées ?": {
+      "main": [
+        [
+          {
+            "node": "Slack : états bloqués",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Slack : erreur d'exécution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "exemple-portfolio-factice"
+  },
+  "tags": [
+    {
+      "name": "exemple"
+    },
+    {
+      "name": "comptabilité"
+    }
+  ]
+}
